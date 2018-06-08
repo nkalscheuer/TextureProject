@@ -82,8 +82,9 @@ function start(gl, canvas) {
     // Create camera
     var camera = new PerspectiveCamera(80, 1, 1, 200);
     //camera.move(0,0, 150,1);
-    camera.move(2,1,0,0);
-    camera.rotate(80,0,1,0);
+    camera.move(-8,1,0,0);
+    camera.move(2, 0, 0, -1);
+    camera.rotate(230,0,1,0);
 
     // Create scene
     var scene = new Scene(gl, camera);
@@ -94,7 +95,7 @@ function start(gl, canvas) {
     cube.setFragmentShader(f_shaders["cube"]);
     //cube.setRotation(new Vector3([1,45,45]));
     cube.setPosition(new Vector3([0.0,0.0,0.0]));
-    cube.setScale(new Vector3([100,100,100]));
+    cube.setScale(new Vector3([30,30,30]));
     scene.addGeometry(cube);
 
     var triang = new Geometry();
@@ -108,11 +109,14 @@ function start(gl, canvas) {
     scene.addGeometry(triang);
 
     // Create a Sphere
-    var sphere = new SphereGeometry(1, 32, 32);
+    var sphere = new SphereGeometry(2, 32, 32);
     sphere.v_shader = v_shaders["sphere"];
     sphere.f_shader = f_shaders["sphere"];
     //sphere.setPosition(new Vector3([-5, 0, 0]));
     sphere.setPosition(new Vector3([-3,0.0,0.0]));
+    //sphere.addUniform("u_EyePos", "v3", camera.position);
+    sphere.addUniform("u_EyePos", "v3", camera.position.elements);
+
     scene.addGeometry(sphere);
 
     scene.draw();

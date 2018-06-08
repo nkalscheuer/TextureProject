@@ -9,5 +9,6 @@ varying vec3 v_normal;
 void main() {
     v_normal = a_Position.xyz;
     gl_Position = u_ProjectionMatrix * u_ViewMatrix * u_ModelMatrix * a_Position;
-    v_pos = gl_Position;
+    v_pos = u_ModelMatrix * a_Position;
+    // v_pos = gl_Position;
 }
