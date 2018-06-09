@@ -47,7 +47,29 @@ function main() {
     loadFile("shaders/triang_shader.frag", function(shader_src) {
         setShader(gl, canvas, "triang", gl.FRAGMENT_SHADER, shader_src);
     });
+    canvas.onmousedown = function (ev){onClickDown(ev, canvas)};
+    document.onmouseup = function (ev){
+            if(ev.button == 0){
+                ClickedDown = false;
+            }
+        };
+
+    canvas.onmousemove = function (ev){onMouseMove(ev, canvas)};
+
+
 }
+
+var Camera;
+var MouseDownLocation;
+var ClickedCameraPosition;
+var ClickedCameraCenter;
+var ClickedDown = false;
+var RightClickDown = false;
+var scene;
+
+var ROTATE = 60; //Rotate amount
+
+
 
 // set appropriate shader and start if both are loaded
 function setShader(gl, canvas, name, shader, shader_src) {
@@ -79,15 +101,15 @@ function setShader(gl, canvas, name, shader, shader_src) {
 
 function start(gl, canvas) {
 
-    // Create camera
-    var camera = new PerspectiveCamera(80, 1, 1, 200);
-    //camera.move(0,0, 150,1);
-    camera.move(-8,1,0,0);
-    camera.move(2, 0, 0, -1);
-    camera.rotate(230,0,1,0);
+    // Create Camera
+    Camera = new PerspectiveCamera(80, 1, 1, 200);
+    //Camera.move(0,0, 150,1);
+    Camera.move(-8,1,0,0);
+    Camera.move(2, 0, 0, -1);
+    Camera.rotate(230,0,1,0);
 
     // Create scene
-    var scene = new Scene(gl, camera);
+    scene = new Scene(gl, Camera);
 
     // Create a cube
     var cube = new CubeGeometry(1);
@@ -97,6 +119,14 @@ function start(gl, canvas) {
     cube.setPosition(new Vector3([0.0,0.0,0.0]));
     cube.setScale(new Vector3([30,30,30]));
     scene.addGeometry(cube);
+
+    var woodBox = new CubeGeometry(1);
+    woodBox.setVertexShader(v_shaders["cube"]);
+    woodBox.setFragmentShader(f_shaders["cube"]);
+    //cube.setRotation(new Vector3([1,45,45]));
+    woodBox.setPosition(new Vector3([0.0,0.0,0.0]));
+    woodBox.setScale(new Vector3([2, 2, 2]));
+    scene.addGeometry(woodBox);
 
     var triang = new Geometry();
     triang.vertices = [-1, -1, 0.0, 0.0, 1.0, 0.0, 1, -1, 0.0];
@@ -109,34 +139,109 @@ function start(gl, canvas) {
     scene.addGeometry(triang);
 
     // Create a Sphere
-    var sphere = new SphereGeometry(2, 32, 32);
+    var sphere = new SphereGeometry(0.5, 32, 32);
     sphere.v_shader = v_shaders["sphere"];
     sphere.f_shader = f_shaders["sphere"];
     //sphere.setPosition(new Vector3([-5, 0, 0]));
     sphere.setPosition(new Vector3([-3,0.0,0.0]));
-    //sphere.addUniform("u_EyePos", "v3", camera.position);
-    sphere.addUniform("u_EyePos", "v3", camera.position.elements);
+    //sphere.addUniform("u_EyePos", "v3", Camera.position);
+    sphere.addUniform("u_EyePos", "v3", Camera.position.elements);
 
     scene.addGeometry(sphere);
 
-    scene.draw();
+    // scene.draw();
 
     var tex2 = new Texture2D(gl, 'img/beach/posz.jpg', function(tex) {
         console.log(tex);
         triang.addUniform("u_tex", "t2", tex);
-        scene.draw();
+        //scene.draw();
     });
-
+    var cubeMap = "img/Maskonaive3/";
     var tex = new Texture3D(gl, [
-        'img/beach/negx.jpg',
-        'img/beach/posx.jpg',
-        'img/beach/negy.jpg',
-        'img/beach/posy.jpg',
-        'img/beach/negz.jpg',
-        'img/beach/posz.jpg'
+        cubeMap + 'negx.jpg',
+        cubeMap + 'posx.jpg',
+        cubeMap + 'negy.jpg',
+        cubeMap + 'posy.jpg',
+        cubeMap + 'negz.jpg',
+        cubeMap + 'posz.jpg'
     ], function(tex) {
         cube.addUniform("u_cubeTex", "t3", tex);
         sphere.addUniform("u_sphereTex", "t3", tex);
         scene.draw();
     });
+    var woodPath = "img/Wood/Wood.jpg";
+    var texWood = new Texture3D(gl, [
+        woodPath,
+        woodPath,
+        woodPath,
+        woodPath,
+        woodPath,
+        woodPath
+    ], function (texWood){
+        woodBox.addUniform("u_cubeTex", "t3", texWood);
+        scene.draw();
+    });
+    scene.draw();
 }
+
+function onScroll(ev, canvas){
+
+}
+function onClickDown(ev, canvas){
+    console.log("Clicked down");
+    ClickedDown = true;
+    MouseDownLocation = getCanvasCoordinates(ev, canvas);
+    // LastMouseLocation = MouseDownLocation;
+    ClickedCameraPosition = Camera.position;
+    ClickedCameraCenter = Camera.center;
+}
+function onRightClickDown(ev, canvas){
+
+}
+function onMouseMove(ev, canvas){
+    if(RightClickDown){
+
+    }
+    if(ClickedDown){
+        //Get the change
+        var change = getMouseChange(ev, canvas);
+
+        //Do math with vector
+        let axis2 = getPerp(change);
+
+        let axis3 = new Vector3([axis2[0], axis2[1], 0]);
+
+        Camera.position = ClickedCameraPosition;
+        Camera.center = ClickedCameraCenter;
+
+        let mag = VectorLibrary.magnitude(axis3);
+        let angle = ROTATE * mag;
+        Camera.rotate(angle, axis3.elements[0], axis3.elements[1], axis3.elements[2]);
+        console.log(Camera);
+        console.log(scene);
+        scene.draw();
+    }
+}
+
+function getMouseChange(ev, canvas){
+    var current = getCanvasCoordinates(ev, canvas);
+    return [current[0] - MouseDownLocation[0], current[1] - MouseDownLocation[1]];
+}
+function getPerp(change){
+    return [-change[1], change[0]];
+}
+function getCanvasCoordinates(ev, canvas){
+    var x = ev.clientX; // x coordinate of a mouse pointer
+    var y = ev.clientY; // y coordinate of a mouse pointer
+    var rect = ev.target.getBoundingClientRect() ;
+  
+    x = ((x - rect.left) - canvas.width/2)/(canvas.width/2);
+    y = (canvas.height/2 - (y - rect.top))/(canvas.height/2);
+    return [x, y];
+  }
+  function moveLookAt(value){
+
+  }
+  function updateCameraPosition(){
+      
+  }
