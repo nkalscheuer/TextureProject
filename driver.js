@@ -56,6 +56,16 @@ function main() {
 
     canvas.onmousemove = function (ev){onMouseMove(ev, canvas)};
 
+    canvas.onwheel = function (ev) { onScroll(ev, canvas)};
+
+    document.onkeydown = function (ev) {
+        switch(ev.key){
+            case "w":
+                moveLookAt(MOVEVAL);
+        }
+
+    };
+
 
 }
 
@@ -66,6 +76,8 @@ var ClickedCameraCenter;
 var ClickedDown = false;
 var RightClickDown = false;
 var scene;
+var Sphere;
+var MOVEVAL = 1;
 
 var ROTATE = 60; //Rotate amount
 
@@ -159,15 +171,15 @@ function start(gl, canvas) {
     scene.addGeometry(triang);
 
     // Create a Sphere
-    var sphere = new SphereGeometry(0.5, 32, 32);
-    sphere.v_shader = v_shaders["sphere"];
-    sphere.f_shader = f_shaders["sphere"];
+    Sphere = new SphereGeometry(0.5, 32, 32);
+    Sphere.v_shader = v_shaders["sphere"];
+    Sphere.f_shader = f_shaders["sphere"];
     //sphere.setPosition(new Vector3([-5, 0, 0]));
-    sphere.setPosition(new Vector3([-3,0.0,0.0]));
+    Sphere.setPosition(new Vector3([-3,0.0,0.0]));
     //sphere.addUniform("u_EyePos", "v3", Camera.position);
-    sphere.addUniform("u_EyePos", "v3", Camera.position.elements);
+    Sphere.addUniform("u_EyePos", "v3", Camera.position.elements);
 
-    scene.addGeometry(sphere);
+    scene.addGeometry(Sphere);
 
     // scene.draw();
 
@@ -186,7 +198,7 @@ function start(gl, canvas) {
         cubeMap + 'posz.jpg'
     ], function(tex) {
         cube.addUniform("u_cubeTex", "t3", tex);
-        sphere.addUniform("u_sphereTex", "t3", tex);
+        Sphere.addUniform("u_sphereTex", "t3", tex);
 
         scene.draw();
     });
@@ -209,6 +221,12 @@ function start(gl, canvas) {
 }
 
 function onScroll(ev, canvas){
+    let scaleRatio = 15;
+    console.log(ev.deltaY);
+    let movement = (ev.deltaY/Math.abs(ev.deltaY))/scaleRatio;
+    Camera.move(movement, 0, 1, 0);
+    updateCameraPosition();
+    scene.draw();
 
 }
 function onClickDown(ev, canvas){
@@ -264,8 +282,16 @@ function getCanvasCoordinates(ev, canvas){
     return [x, y];
   }
   function moveLookAt(value){
+    //Get look at vector
+    var lookAt = VectorLibrary.getVector(Camera.position, Camera.center);
+    lookAt.normalize();
 
+    //Move camera
+    var l = lookAt.elements;
+    Camera.move(value,l[0], l[1], l[2]);
+    updateCameraPosition();
+    scene.draw();
   }
   function updateCameraPosition(){
-      
+    Sphere.addUniform("u_EyePos", "v3", Camera.position.elements);
   }
