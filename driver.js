@@ -125,8 +125,28 @@ function start(gl, canvas) {
     woodBox.setFragmentShader(f_shaders["cube"]);
     //cube.setRotation(new Vector3([1,45,45]));
     woodBox.setPosition(new Vector3([0.0,0.0,0.0]));
-    woodBox.setScale(new Vector3([2, 2, 2]));
+    woodBox.setScale(new Vector3([1.5, 1.5, 1.5]));
+    woodBox.setRotation(new Vector3([1,45,45]));
     scene.addGeometry(woodBox);
+
+    var woodPlane1 = new CubeGeometry(1);
+    woodPlane1.setVertexShader(v_shaders["cube"]);
+    woodPlane1.setFragmentShader(f_shaders["cube"]);
+    //cube.setRotation(new Vector3([1,45,45]));
+    woodPlane1.setPosition(new Vector3([0.0,-4,0.0]));
+    woodPlane1.setScale(new Vector3([2.0, 0.00001, 2.0]));
+    //woodPlane1.setRotation(new Vector3([1,45,45]));
+    scene.addGeometry(woodPlane1);
+
+    var woodPlane2 = new CubeGeometry(1);
+    woodPlane2.setVertexShader(v_shaders["cube"]);
+    woodPlane2.setFragmentShader(f_shaders["cube"]);
+    //cube.setRotation(new Vector3([1,45,45]));
+    woodPlane2.setPosition(new Vector3([4,-4,0.0]));
+    woodPlane2.setScale(new Vector3([2.0, 0.00001, 2.0]));
+    //woodPlane1.setRotation(new Vector3([1,45,45]));
+    scene.addGeometry(woodPlane2);
+
 
     var triang = new Geometry();
     triang.vertices = [-1, -1, 0.0, 0.0, 1.0, 0.0, 1, -1, 0.0];
@@ -167,6 +187,7 @@ function start(gl, canvas) {
     ], function(tex) {
         cube.addUniform("u_cubeTex", "t3", tex);
         sphere.addUniform("u_sphereTex", "t3", tex);
+
         scene.draw();
     });
     var woodPath = "img/Wood/Wood.jpg";
@@ -179,6 +200,9 @@ function start(gl, canvas) {
         woodPath
     ], function (texWood){
         woodBox.addUniform("u_cubeTex", "t3", texWood);
+        woodPlane1.addUniform("u_cubeTex", "t3", texWood);
+        woodPlane2.addUniform("u_cubeTex", "t3", texWood);
+        
         scene.draw();
     });
     scene.draw();
