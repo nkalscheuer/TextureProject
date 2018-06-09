@@ -16,10 +16,17 @@ function main() {
 
     v_shaders["cube"] = "";
     f_shaders["cube"] = "";
+    v_shaders["sky"] = "";
+    f_shaders["sky"] = "";
     v_shaders["sphere"] = "";
+    f_shaders["pyramid"] = "";
+    v_shaders["pyramid"] = "";
     f_shaders["sphere"] = "";
     v_shaders["triang"] = "";
     f_shaders["triang"] = "";
+
+    // v_shaders["sky"] = "";
+    // // f_shaders["sky"]="";
 
     // load shader files (calls 'setShader' when done loading)
     loadFile("shaders/cube_shader.vert", function(shader_src) {
@@ -30,6 +37,14 @@ function main() {
         setShader(gl, canvas, "cube", gl.FRAGMENT_SHADER, shader_src);
     });
 
+    loadFile("shaders/sky_shader.vert", function(shader_src) {
+        setShader(gl, canvas, "sky", gl.VERTEX_SHADER, shader_src);
+    });
+
+    loadFile("shaders/sky_shader.frag", function(shader_src) {
+        setShader(gl, canvas, "sky", gl.FRAGMENT_SHADER, shader_src);
+    });
+
     // load shader files (calls 'setShader' when done loading)
     loadFile("shaders/sphere_shader.vert", function(shader_src) {
         setShader(gl, canvas, "sphere", gl.VERTEX_SHADER, shader_src);
@@ -37,6 +52,14 @@ function main() {
 
     loadFile("shaders/sphere_shader.frag", function(shader_src) {
         setShader(gl, canvas, "sphere", gl.FRAGMENT_SHADER, shader_src);
+    });
+
+    loadFile("shaders/pyramid_shader.vert", function(shader_src) {
+        setShader(gl, canvas, "pyramid", gl.VERTEX_SHADER, shader_src);
+    });
+
+    loadFile("shaders/pyramid_shader.frag", function(shader_src) {
+        setShader(gl, canvas, "pyramid", gl.FRAGMENT_SHADER, shader_src);
     });
 
     // load shader files (calls 'setShader' when done loading)
@@ -62,6 +85,24 @@ function main() {
         switch(ev.key){
             case "w":
                 moveLookAt(MOVEVAL);
+                break;
+            case "s":
+                moveLookAt(-MOVEVAL);
+                break;
+            case "d":
+                strafe(MOVEVAL);
+                break;
+            case "a":
+                strafe(-MOVEVAL);
+                break;
+            case "+":
+                scalePlane(SCALEVAL);
+                break;
+            case "-":
+                scalePlane(-SCALEVAL);
+                break;
+                
+            
         }
 
     };
@@ -77,8 +118,12 @@ var ClickedDown = false;
 var RightClickDown = false;
 var scene;
 var Sphere;
-var MOVEVAL = 1;
-
+var woodPlane1;
+var woodPlane2;
+var Pyramid;
+var MOVEVAL = 0.5;
+var PlaneScale = 1;
+var SCALEVAL = 0.1;
 var ROTATE = 60; //Rotate amount
 
 
@@ -125,8 +170,8 @@ function start(gl, canvas) {
 
     // Create a cube
     var cube = new CubeGeometry(1);
-    cube.setVertexShader(v_shaders["cube"]);
-    cube.setFragmentShader(f_shaders["cube"]);
+    cube.setVertexShader(v_shaders["sky"]);
+    cube.setFragmentShader(f_shaders["sky"]);
     //cube.setRotation(new Vector3([1,45,45]));
     cube.setPosition(new Vector3([0.0,0.0,0.0]));
     cube.setScale(new Vector3([30,30,30]));
@@ -141,21 +186,21 @@ function start(gl, canvas) {
     woodBox.setRotation(new Vector3([1,45,45]));
     scene.addGeometry(woodBox);
 
-    var woodPlane1 = new CubeGeometry(1);
+    woodPlane1 = new CubeGeometry(1);
     woodPlane1.setVertexShader(v_shaders["cube"]);
     woodPlane1.setFragmentShader(f_shaders["cube"]);
     //cube.setRotation(new Vector3([1,45,45]));
     woodPlane1.setPosition(new Vector3([0.0,-4,0.0]));
-    woodPlane1.setScale(new Vector3([2.0, 0.00001, 2.0]));
+    woodPlane1.setScale(new Vector3([PlaneScale, 0.00001, PlaneScale]));
     //woodPlane1.setRotation(new Vector3([1,45,45]));
     scene.addGeometry(woodPlane1);
 
-    var woodPlane2 = new CubeGeometry(1);
+    woodPlane2 = new CubeGeometry(1);
     woodPlane2.setVertexShader(v_shaders["cube"]);
     woodPlane2.setFragmentShader(f_shaders["cube"]);
     //cube.setRotation(new Vector3([1,45,45]));
-    woodPlane2.setPosition(new Vector3([4,-4,0.0]));
-    woodPlane2.setScale(new Vector3([2.0, 0.00001, 2.0]));
+    woodPlane2.setPosition(new Vector3([PlaneScale*2,-4,0.0]));
+    woodPlane2.setScale(new Vector3([PlaneScale, 0.00001, PlaneScale]));
     //woodPlane1.setRotation(new Vector3([1,45,45]));
     scene.addGeometry(woodPlane2);
 
@@ -165,6 +210,8 @@ function start(gl, canvas) {
     triang.indices = [0, 1, 2];
     var uvs = [0.0, 0.0, 0.0, 0.5, 1.0, 0.0, 1.0, 0.0, 0.0];
     triang.addAttribute("a_uv", uvs);
+
+    
 
     triang.setVertexShader(v_shaders["triang"]);
     triang.setFragmentShader(f_shaders["triang"]);
@@ -180,6 +227,15 @@ function start(gl, canvas) {
     Sphere.addUniform("u_EyePos", "v3", Camera.position.elements);
 
     scene.addGeometry(Sphere);
+
+    Pyramid = makePyramid();
+    Pyramid.setVertexShader(v_shaders["pyramid"]);
+    Pyramid.setFragmentShader(f_shaders["pyramid"]);
+    Pyramid.setPosition(new Vector3([-3, -3, 4]));
+    Pyramid.setScale(new Vector3([2, 2, 2]));
+    Pyramid.addUniform("u_EyePos", "v3", Camera.position.elements);
+
+    scene.addGeometry(Pyramid);
 
     // scene.draw();
 
@@ -199,7 +255,7 @@ function start(gl, canvas) {
     ], function(tex) {
         cube.addUniform("u_cubeTex", "t3", tex);
         Sphere.addUniform("u_sphereTex", "t3", tex);
-
+        Pyramid.addUniform("u_sphereTex", "t3", tex);
         scene.draw();
     });
     var woodPath = "img/Wood/Wood.jpg";
@@ -292,6 +348,70 @@ function getCanvasCoordinates(ev, canvas){
     updateCameraPosition();
     scene.draw();
   }
+  function strafe(value){
+    var lookAt = VectorLibrary.getVector(Camera.position, Camera.center);
+    lookAt.normalize();
+
+    var strafe = VectorLibrary.crossProduct(lookAt, Camera.up);
+
+    var s = strafe.elements;
+    Camera.move(value, s[0], s[1], s[2]);
+    updateCameraPosition();
+    scene.draw();
+  }
   function updateCameraPosition(){
     Sphere.addUniform("u_EyePos", "v3", Camera.position.elements);
+    Pyramid.addUniform("u_EyePos", "v3", Camera.position.elements);
+  }
+
+  function scalePlane(value){
+    PlaneScale += value;
+    woodPlane1.setScale(new Vector3([PlaneScale, 0.0001, PlaneScale]));
+    woodPlane2.setScale(new Vector3([PlaneScale, 0.0001, PlaneScale]));
+
+    woodPlane2.setPosition(new Vector3([PlaneScale * 2, -4, 0]));
+    scene.draw();
+  }
+
+  function makePyramid(){
+      var pyramid = new Geometry();
+
+      pyramid.vertices = [
+          0,1,0,  1,0,0,   0,0,1,  //First triangle
+          0,1,0,  0,0,-1,  1,0,0,  //Second Triangle
+          0,1,0,  -1,0,0,  0,0,-1, //Third triangle
+          0,1,0,  0,0,1,   -1,0,0  //Fourth triangle
+      ]
+      var tri1Norm = VectorLibrary.crossProduct(
+        new Vector3([-1, 0, 1]), new Vector3([-1, 1, 0])
+      ).elements;
+
+      var tri2Norm = VectorLibrary.crossProduct(
+        new Vector3([-1, 1, 0]), new Vector3([-1, 0, -1])
+      ).elements;
+
+      var tri3Norm = VectorLibrary.crossProduct(
+          new Vector3([0, 1, 1]), new Vector3([-1, 0, 1])
+      ).elements;
+
+      var tri4Norm = VectorLibrary.crossProduct(
+          new Vector3([1, 1, 0]), new Vector3([1, 0, 1])
+      ).elements;
+
+      var normals = [
+          tri1Norm[0], tri1Norm[1], tri1Norm[2], tri1Norm[0], tri1Norm[1], tri1Norm[2], tri1Norm[0], tri1Norm[1], tri1Norm[2],
+          tri2Norm[0], tri2Norm[1], tri2Norm[2],  tri2Norm[0], tri2Norm[1], tri2Norm[2],  tri2Norm[0], tri2Norm[1], tri2Norm[2],
+          tri3Norm[0], tri3Norm[1], tri3Norm[2],  tri3Norm[0], tri3Norm[1], tri3Norm[2],  tri3Norm[0], tri3Norm[1], tri3Norm[2],
+          tri4Norm[0], tri4Norm[1], tri4Norm[2],  tri4Norm[0], tri4Norm[1], tri4Norm[2],  tri4Norm[0], tri4Norm[1], tri4Norm[2]
+      ];
+      pyramid.indices = [0,1,2,3,4,5,6,7,8,9,10,11];
+      pyramid.addAttribute("a_Normal", normals);
+      return pyramid;
+
+    //   var triang = new Geometry();
+    //   triang.vertices = [-1, -1, 0.0, 0.0, 1.0, 0.0, 1, -1, 0.0];
+    //   triang.indices = [0, 1, 2];
+    //   var uvs = [0.0, 0.0, 0.0, 0.5, 1.0, 0.0, 1.0, 0.0, 0.0];
+    //   triang.addAttribute("a_uv", uvs);
+
   }
